@@ -6,7 +6,7 @@ xmlschema==1.0.18
 ephem
 tabulate
 opencv-python==4.2.0.32
-numpy
+numpy==1.20
 matplotlib
 six
 simple-watchdog-timer
@@ -14,7 +14,8 @@ lxml
 sympy
 pyyaml
 scipy
-lmdb
-omegaconf
+lmdb==1.8.1
+omegaconf==2.1.2
 munch
 openai==0.28
+carla==0.9.12

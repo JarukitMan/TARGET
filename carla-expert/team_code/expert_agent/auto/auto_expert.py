@@ -11,8 +11,10 @@ from __future__ import print_function
 import yaml
 import carla
 from lib.basic_agent import BasicAgent
-from leaderboard.autoagents.autonomous_agent import AutonomousAgent, Track
-from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
+# NOTE: I added "carla_challenge_leaderboard" to the front of this.
+from carla_challenge_leaderboard.leaderboard.autoagents.autonomous_agent import AutonomousAgent, Track
+# NOTE: I added "scenario_runner" to the front of this.
+from scenario_runner.srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from lib.misc import get_speed
 import os
 import lmdb

@@ -1,3 +1,6 @@
+NOTE: I added CARLA's "agents" module manually to sites-packages.
+I also had to manually download the "lib" module from CARLA-expert
+I also had to move the leaderboard folder into the agents I want to use.
 # TARGET
 This is the repository for the work "TARGET: Traffic Rule-based Test Generation for Autonomous Driving Systems".
 
