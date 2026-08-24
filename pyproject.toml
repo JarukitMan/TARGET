@@ -1,41 +1,34 @@
 [project]
 name = "target"
 version = "0.1.0"
-description = "Add your description here"
+description = "STADSUNT's TARGET fork"
 readme = "README.md"
-requires-python = ">=3.8"
+authors = [
+    { name = "JarukitMan", email = "jarukit.man@student.mahidol.edu" }
+]
+requires-python = ">=3.12"
 dependencies = [
-    "carla==0.9.12",
-    "dictor>=0.1.12",
-    "einops>=0.8.1",
+    "antlr4-python3-runtime==4.10",
+    "carla>=0.9.16",
     "ephem>=4.2.1",
-    "filelock>=3.16.1",
-    "gym>=0.26.2",
-    "h5py>=3.11.0",
-    "hydra-core==1.1",
-    "lmdb==1.8.1",
-    "lxml>=6.1.1",
-    "matplotlib>=3.7.5",
-    "munch>=4.0.0",
-    "networkx==2.2",
-    "numpy==1.20",
-    "omegaconf==2.1.2",
-    "openai==0.28",
-    "opencv-python==4.2.0.32",
-    "pickle-mixin>=1.0.2",
+    "graphviz>=0.21",
+    "matplotlib>=3.11.1",
+    "networkx==3.4.2",
+    "numpy>1.24.4 ; python_full_version >= '3'",
+    "opencv-python==4.7.0.72",
     "psutil>=7.2.2",
     "py-trees==0.8.3",
     "pygame>=2.6.1",
-    "pyyaml>=6.0.3",
-    "ray==2.5",
-    "requests>=2.32.4",
-    "scipy>=1.10.1",
-    "shapely==2.0.6",
+    "shapely==2.1.1",
     "simple-watchdog-timer>=0.1.1",
     "six>=1.17.0",
-    "sympy>=1.13.3",
-    "tabulate>=0.9.0",
-    "tqdm>=4.68.3",
-    "wandb>=0.24.2",
+    "tabulate>=0.10.0",
     "xmlschema==1.0.18",
 ]
+
+[project.scripts]
+target = "target:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
