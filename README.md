@@ -1,11 +1,11 @@
 # STADSUNT's reimplementation of TARGET's scenario parser.
 
 ## TODO
-- Create the types.
-- Create the engine.
-- Integrate PyYAML.
-- Integrate argparse.
-- Integrate carla-simulator/scenario_runner
+- [x] Create the types.
+- [x] Create the engine.
+- [ ] Integrate PyYAML.
+- [ ] Integrate argparse.
+- [ ] Integrate carla-simulator/scenario_runner
 
 ## Usage
 target MAP.xodr SCENARIO.yaml
