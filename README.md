@@ -3,9 +3,14 @@
 ## TODO
 - [x] Create the types.
 - [x] Create the engine.
-- [ ] Integrate PyYAML.
+- [x] Integrate PyYAML.
 - [ ] Integrate argparse.
 - [ ] Integrate carla-simulator/scenario_runner
+
+## DSL Difference
+- Road signs can now be a list.
+- Road lane count is now independent of road type. (int)
+- Road marker is now independent of road type.
 
 ## Usage
 target MAP.xodr SCENARIO.yaml
