@@ -81,7 +81,7 @@ def find_props(
 
 
 # This function filters the routes by the road marker.
-def find_marker(routes: list[r.Route], marker: list[c.RoadMarker]) -> list[r.Route]:
+def find_marker(routes: list[r.Route], marker: c.RoadMarker) -> list[r.Route]:
     if marker == c.RoadMarker.SOLID_LINE:
         routes = [
             route
