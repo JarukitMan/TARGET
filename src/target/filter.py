@@ -17,6 +17,7 @@ def set_weather(scenario: s.BasicScenario, weather: c.Weather) -> s.BasicScenari
     )
 
     for i in range(100):
+        # FIXME: This is assuming new_weather is not frozen.
         new_weather = scenario.world.get_weather()
         if weather == c.Weather.FOGGY:
             new_weather.fog_density = min(i * 3, 100)
@@ -34,6 +35,33 @@ def set_weather(scenario: s.BasicScenario, weather: c.Weather) -> s.BasicScenari
         new_scenario.behavior_tree.add_child(weather_behavior)
     else:
         new_scenario.behavior_tree = t.composites.Sequence(children=weather_behavior)
+
+    return new_scenario
+
+# This function returns a new scenario with the time defined by the user.
+def set_time(scenario: s.BasicScenario, time: c.Time) -> s.BasicScenario:
+
+    new_scenario = scenario
+    time_behavior = t.composites.Sequence(
+        policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
+    )
+
+    for i in range(100):
+        # FIXME: This is assuming new_time is not frozen.
+        new_time = scenario.world.get_weather()
+        if time == c.Time.DAY:
+            # TODO: Check if this is fine.
+            new_time.sun_altitude_angle = min(i * 3, 100)
+        if time == c.Time.NIGHT:
+            new_time.sun_altitude_angle = i * 3 / 4
+
+        time_behavior.add_child(a.ChangeWeather(new_time))
+        time_behavior.add_child(a.Idle(0.2))
+
+    if new_scenario.behavior_tree:
+        new_scenario.behavior_tree.add_child(time_behavior)
+    else:
+        new_scenario.behavior_tree = t.composites.Sequence(children=time_behavior)
 
     return new_scenario
 
