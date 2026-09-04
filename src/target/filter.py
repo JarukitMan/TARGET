@@ -1,7 +1,9 @@
 import py_trees as t
 
 import carla
+import copy
 import opendriveparser.elements.openDrive as o
+import scenario_runner.srunner.tools.route_manipulation as m
 import scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_behaviors as a
 import scenario_runner.srunner.scenarios.open_scenario as s
 import target.classes as c
@@ -37,6 +39,34 @@ def set_weather(scenario: s.BasicScenario, weather: c.Weather) -> s.BasicScenari
         new_scenario.behavior_tree = t.composites.Sequence(children=weather_behavior)
 
     return new_scenario
+
+
+def set_traffic_light(scenario: s.BasicScenario, red_light: bool) -> s.BasicScenario:
+
+    new_scenario = scenario
+    if red_light:
+        traffic_light_behavior = t.composites.Sequence(
+            policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
+        )
+        traffic_lights = copy.deepcopy(m.CarlaDataProvider._traffic_light_map)
+        traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_lights, carla.TrafficLightState.Red))
+        traffic_light_behavior.add_child(a.Idle(60))
+    else:
+        traffic_light_behavior = t.composites.Sequence(
+            policy=t.common.ParallelPolicy.SUCCESS_ON_ONE)
+        traffic_lights = copy.deepcopy(m.CarlaDataProvider._traffic_light_map)
+        for traffic_light in traffic_lights:
+            traffic_light.set_red_time(3)
+        traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_lights, carla.TrafficLightState.Green))
+        traffic_light_behavior.add_child(a.Idle(60))
+
+    if new_scenario.behavior_tree:
+        new_scenario.behavior_tree.add_child(traffic_light_behavior)
+    else:
+        new_scenario.behavior_tree = t.composites.Sequence(children=traffic_light_behavior)
+
+    return new_scenario
+    
 
 # This function returns a new scenario with the time defined by the user.
 def set_time(scenario: s.BasicScenario, time: c.Time) -> s.BasicScenario:
