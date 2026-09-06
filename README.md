@@ -4,8 +4,10 @@
 - [x] Create the types.
 - [x] Create the engine.
 - [x] Integrate PyYAML.
-- [ ] Integrate argparse.
+- [x] Implement set_actor_behavior
+- [ ] Feed the configuration into ParsedScenario
 - [ ] Integrate carla-simulator/scenario_runner
+- [ ] Integrate argparse.
 
 ## DSL Difference
 - Road signs can now be a list.
@@ -33,4 +35,4 @@ You can pass the options as flags to the program to indicate alternate executabl
 - carla-simulator/scenario_runner:0.9.16
 
 ## Installation
-After installing all the dependencies correctly, run `uv tool install target`.
+After installing all the dependencies correctly, run `uv tool install .`.
