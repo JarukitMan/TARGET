@@ -14,4 +14,4 @@ mkdir carla
 tar xzf tarballs/carla.tar.gz -C carla
 
 # For some reason, you need to manually get the agents file from CARLA source. It's not built or provided as a package.
-cp carla/PythonAPI/carla/agents .
+cp --recursive carla/PythonAPI/carla/agents .
