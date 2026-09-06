@@ -33,6 +33,11 @@ You can pass the options as flags to the program to indicate alternate executabl
 - CARLA 0.9.16
 - CARLA 0.9.16's agents folder
 - carla-simulator/scenario_runner:0.9.16
+Then please initialize the dependencies as packages yourself using `uv init {DIRECTORY_NAME}` and adding their dependencies.
+I will add it to the shell script later.
 
 ## Installation
 After installing all the dependencies correctly, run `uv tool install .`.
+
+## NOTES
+This project uses a vendored version of Stefan Urban's OpenDRIVE parser. It is inside the src/target/opendriveparser directory.

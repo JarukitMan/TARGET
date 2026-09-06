@@ -1,9 +1,9 @@
-from opendriveparser.elements.junction import Junction
-from opendriveparser.elements.roadElevationProfile import ElevationProfile
-from opendriveparser.elements.roadLanes import Lanes
-from opendriveparser.elements.roadLateralProfile import LateralProfile
-from opendriveparser.elements.roadLink import Link
-from opendriveparser.elements.roadPlanView import PlanView
+from target.opendriveparser.elements.junction import Junction
+from target.opendriveparser.elements.roadElevationProfile import ElevationProfile
+from target.opendriveparser.elements.roadLanes import Lanes
+from target.opendriveparser.elements.roadLateralProfile import LateralProfile
+from target.opendriveparser.elements.roadLink import Link
+from target.opendriveparser.elements.roadPlanView import PlanView
 
 
 class Road:

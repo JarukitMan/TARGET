@@ -2,7 +2,7 @@ import abc
 
 import numpy as np
 
-from opendriveparser.elements.eulerspiral import EulerSpiral
+from target.opendriveparser.elements.eulerspiral import EulerSpiral
 
 
 class PlanView:

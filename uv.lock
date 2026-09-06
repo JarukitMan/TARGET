@@ -7,6 +7,29 @@ resolution-markers = [
     "(platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')",
 ]
 
+[manifest]
+members = [
+    "agents",
+    "scenario-runner",
+    "srunner",
+    "target",
+]
+
+[[package]]
+name = "agents"
+version = "0.1.0"
+source = { editable = "agents" }
+dependencies = [
+    { name = "networkx" },
+    { name = "shapely" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "networkx" },
+    { name = "shapely" },
+]
+
 [[package]]
 name = "antlr4-python3-runtime"
 version = "4.10"
@@ -817,6 +840,45 @@ wheels = [
 ]
 
 [[package]]
+name = "scenario-runner"
+version = "0.1.0"
+source = { editable = "scenario_runner" }
+dependencies = [
+    { name = "antlr4-python3-runtime" },
+    { name = "ephem" },
+    { name = "graphviz" },
+    { name = "matplotlib" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "opencv-python" },
+    { name = "psutil" },
+    { name = "py-trees" },
+    { name = "shapely" },
+    { name = "simple-watchdog-timer" },
+    { name = "six" },
+    { name = "tabulate" },
+    { name = "xmlschema" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "antlr4-python3-runtime", specifier = "==4.10" },
+    { name = "ephem" },
+    { name = "graphviz" },
+    { name = "matplotlib" },
+    { name = "networkx", specifier = "==3.4.2" },
+    { name = "numpy", marker = "python_full_version >= '3'", specifier = ">1.24.4" },
+    { name = "opencv-python", specifier = "==4.7.0.72" },
+    { name = "psutil" },
+    { name = "py-trees", specifier = "==0.8.3" },
+    { name = "shapely", specifier = "==2.1.1" },
+    { name = "simple-watchdog-timer" },
+    { name = "six" },
+    { name = "tabulate" },
+    { name = "xmlschema", specifier = "==1.0.18" },
+]
+
+[[package]]
 name = "scipy"
 version = "1.18.1"
 source = { registry = "https://pypi.org/simple" }
@@ -947,6 +1009,45 @@ wheels = [
 ]
 
 [[package]]
+name = "srunner"
+version = "0.1.0"
+source = { editable = "srunner" }
+dependencies = [
+    { name = "antlr4-python3-runtime" },
+    { name = "ephem" },
+    { name = "graphviz" },
+    { name = "matplotlib" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "opencv-python" },
+    { name = "psutil" },
+    { name = "py-trees" },
+    { name = "shapely" },
+    { name = "simple-watchdog-timer" },
+    { name = "six" },
+    { name = "tabulate" },
+    { name = "xmlschema" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "antlr4-python3-runtime", specifier = "==4.10" },
+    { name = "ephem" },
+    { name = "graphviz" },
+    { name = "matplotlib" },
+    { name = "networkx", specifier = "==3.4.2" },
+    { name = "numpy", marker = "python_full_version >= '3'", specifier = ">1.24.4" },
+    { name = "opencv-python", specifier = "==4.7.0.72" },
+    { name = "psutil" },
+    { name = "py-trees", specifier = "==0.8.3" },
+    { name = "shapely", specifier = "==2.1.1" },
+    { name = "simple-watchdog-timer" },
+    { name = "six" },
+    { name = "tabulate" },
+    { name = "xmlschema", specifier = "==1.0.18" },
+]
+
+[[package]]
 name = "sympy"
 version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -972,6 +1073,7 @@ name = "target"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "agents" },
     { name = "antlr4-python3-runtime" },
     { name = "carla" },
     { name = "ephem" },
@@ -985,10 +1087,12 @@ dependencies = [
     { name = "py-trees" },
     { name = "pygame" },
     { name = "pyyaml" },
+    { name = "scenario-runner" },
     { name = "scipy" },
     { name = "shapely" },
     { name = "simple-watchdog-timer" },
     { name = "six" },
+    { name = "srunner" },
     { name = "sympy" },
     { name = "tabulate" },
     { name = "xmlschema" },
@@ -996,6 +1100,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "agents", editable = "agents" },
     { name = "antlr4-python3-runtime", specifier = "==4.10" },
     { name = "carla", specifier = ">=0.9.16" },
     { name = "ephem", specifier = ">=4.2.1" },
@@ -1009,10 +1114,12 @@ requires-dist = [
     { name = "py-trees", specifier = "==0.8.3" },
     { name = "pygame", specifier = ">=2.6.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "scenario-runner", editable = "scenario_runner" },
     { name = "scipy", specifier = ">=1.18.1" },
     { name = "shapely", specifier = "==2.1.1" },
     { name = "simple-watchdog-timer", specifier = ">=0.1.1" },
     { name = "six", specifier = ">=1.17.0" },
+    { name = "srunner", editable = "srunner" },
     { name = "sympy", specifier = ">=1.14.0" },
     { name = "tabulate", specifier = ">=0.10.0" },
     { name = "xmlschema", specifier = "==1.0.18" },

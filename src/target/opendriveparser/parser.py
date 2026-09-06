@@ -2,31 +2,31 @@
 import numpy as np
 from lxml import etree
 
-from opendriveparser.elements.junction import Connection as JunctionConnection
-from opendriveparser.elements.junction import Junction
-from opendriveparser.elements.junction import LaneLink as JunctionConnectionLaneLink
-from opendriveparser.elements.openDrive import OpenDrive
-from opendriveparser.elements.road import Road
-from opendriveparser.elements.roadElevationProfile import (
+from target.opendriveparser.elements.junction import Connection as JunctionConnection
+from target.opendriveparser.elements.junction import Junction
+from target.opendriveparser.elements.junction import LaneLink as JunctionConnectionLaneLink
+from target.opendriveparser.elements.openDrive import OpenDrive
+from target.opendriveparser.elements.road import Road
+from target.opendriveparser.elements.roadElevationProfile import (
     Elevation as RoadElevationProfileElevation,
 )
-from opendriveparser.elements.roadLanes import Lane as RoadLaneSectionLane
-from opendriveparser.elements.roadLanes import LaneBorder as RoadLaneSectionLaneBorder
-from opendriveparser.elements.roadLanes import LaneOffset as RoadLanesLaneOffset
-from opendriveparser.elements.roadLanes import LaneSection as RoadLanesSection
-from opendriveparser.elements.roadLanes import LaneWidth as RoadLaneSectionLaneWidth
-from opendriveparser.elements.roadLateralProfile import (
+from target.opendriveparser.elements.roadLanes import Lane as RoadLaneSectionLane
+from target.opendriveparser.elements.roadLanes import LaneBorder as RoadLaneSectionLaneBorder
+from target.opendriveparser.elements.roadLanes import LaneOffset as RoadLanesLaneOffset
+from target.opendriveparser.elements.roadLanes import LaneSection as RoadLanesSection
+from target.opendriveparser.elements.roadLanes import LaneWidth as RoadLaneSectionLaneWidth
+from target.opendriveparser.elements.roadLateralProfile import (
     Crossfall as RoadLateralProfileCrossfall,
 )
-from opendriveparser.elements.roadLateralProfile import Shape as RoadLateralProfileShape
-from opendriveparser.elements.roadLateralProfile import (
+from target.opendriveparser.elements.roadLateralProfile import Shape as RoadLateralProfileShape
+from target.opendriveparser.elements.roadLateralProfile import (
     Superelevation as RoadLateralProfileSuperelevation,
 )
-from opendriveparser.elements.roadLink import Neighbor as RoadLinkNeighbor
-from opendriveparser.elements.roadLink import Predecessor as RoadLinkPredecessor
-from opendriveparser.elements.roadLink import Successor as RoadLinkSuccessor
-from opendriveparser.elements.roadType import Speed as RoadTypeSpeed
-from opendriveparser.elements.roadType import Type as RoadType
+from target.opendriveparser.elements.roadLink import Neighbor as RoadLinkNeighbor
+from target.opendriveparser.elements.roadLink import Predecessor as RoadLinkPredecessor
+from target.opendriveparser.elements.roadLink import Successor as RoadLinkSuccessor
+from target.opendriveparser.elements.roadType import Speed as RoadTypeSpeed
+from target.opendriveparser.elements.roadType import Type as RoadType
 
 
 def parse_opendrive(rootNode):

@@ -1,12 +1,19 @@
-from target.classes import Configuration, Prop
-from target.filter import set_weather, set_traffic_light, set_behavior
-from scenario_runner.srunner.scenarios.basic_scenario import BasicScenario
-from scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import InTriggerDistanceToLocation
-from scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_criteria import CollisionTest
 import json
+
 import py_trees
+
 import target.filter as f
 import target.road_topology as r
+from scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_criteria import (
+    CollisionTest,
+)
+from scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
+    InTriggerDistanceToLocation,
+)
+from scenario_runner.srunner.scenarios.basic_scenario import BasicScenario
+from target.classes import Configuration, Prop
+from target.filter import set_behavior, set_traffic_light, set_weather
+
 
 class ParsedScenario(BasicScenario):
 

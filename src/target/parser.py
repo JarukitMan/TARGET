@@ -1,7 +1,7 @@
 import yaml as y
 
 import carla
-import opendriveparser.elements.openDrive as o
+import target.opendriveparser.elements.openDrive as o
 import target.classes as c
 import target.road_topology as r
 

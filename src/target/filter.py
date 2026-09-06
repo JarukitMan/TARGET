@@ -1,12 +1,13 @@
+import copy
+
 import py_trees as t
 
 import carla
-import copy
-import opendriveparser.elements.openDrive as o
-import scenario_runner.srunner.tools.route_manipulation as m
+import target.opendriveparser.elements.openDrive as o
 import scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_behaviors as a
 import scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as at
 import scenario_runner.srunner.scenarios.open_scenario as s
+import scenario_runner.srunner.tools.route_manipulation as m
 import target.classes as c
 import target.road_topology as r
 
