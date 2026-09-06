@@ -5,6 +5,7 @@ import copy
 import opendriveparser.elements.openDrive as o
 import scenario_runner.srunner.tools.route_manipulation as m
 import scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_behaviors as a
+import scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as at
 import scenario_runner.srunner.scenarios.open_scenario as s
 import target.classes as c
 import target.road_topology as r
@@ -44,21 +45,19 @@ def set_weather(scenario: s.BasicScenario, weather: c.Weather) -> s.BasicScenari
 def set_traffic_light(scenario: s.BasicScenario, red_light: bool) -> s.BasicScenario:
 
     new_scenario = scenario
+    traffic_light_behavior = t.composites.Sequence(
+        policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
+    )
+    traffic_lights = copy.deepcopy(m.CarlaDataProvider._traffic_light_map)
+
     if red_light:
-        traffic_light_behavior = t.composites.Sequence(
-            policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
-        )
-        traffic_lights = copy.deepcopy(m.CarlaDataProvider._traffic_light_map)
         traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_lights, carla.TrafficLightState.Red))
-        traffic_light_behavior.add_child(a.Idle(60))
     else:
-        traffic_light_behavior = t.composites.Sequence(
-            policy=t.common.ParallelPolicy.SUCCESS_ON_ONE)
-        traffic_lights = copy.deepcopy(m.CarlaDataProvider._traffic_light_map)
         for traffic_light in traffic_lights:
             traffic_light.set_red_time(3)
         traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_lights, carla.TrafficLightState.Green))
-        traffic_light_behavior.add_child(a.Idle(60))
+
+    traffic_light_behavior.add_child(a.Idle(60))
 
     if new_scenario.behavior_tree:
         new_scenario.behavior_tree.add_child(traffic_light_behavior)
@@ -66,8 +65,71 @@ def set_traffic_light(scenario: s.BasicScenario, red_light: bool) -> s.BasicScen
         new_scenario.behavior_tree = t.composites.Sequence(children=traffic_light_behavior)
 
     return new_scenario
-    
 
+# Helper
+def find_goal(behavior: c.Behavior, waypoint: carla.Waypoint) -> carla.Waypoint:
+    futures = waypoint.next(5)
+    if futures == []:
+        raise ValueError
+
+    if behavior == c.Behavior.CHANGE_LANE_TO_LEFT:
+        future = futures[0].get_left_lane()
+    elif behavior == c.Behavior.CHANGE_LANE_TO_RIGHT:
+        future = futures[0].get_right_lane()
+    else:
+        future = futures[0]
+
+    if future is not None:
+        return future
+    else:
+        raise ValueError
+
+# NOTE: Taken from the original target.
+# Used to generate routes for the NPC actors to take.
+# I don't know why the first output is returned if it's ignored but whatever.
+def gen_npc_route(global_plan_gps, global_plan_world_coord):
+    ds_ids = m.downsample_route(global_plan_world_coord, 1)
+    route_world_coord = [(global_plan_world_coord[x][0], global_plan_world_coord[x][1])
+                                     for x in ds_ids]
+    route_plan = [global_plan_gps[x] for x in ds_ids]
+    return route_plan, route_world_coord
+    
+# NOTE: Modified from the original TARGET code.
+def set_behavior(scenario: s.BasicScenario, waypoints: dict[c.Actor, carla.Waypoint]) -> s.BasicScenario:
+    # behaviors for other actors
+    if len(waypoints) <= 1:
+        return scenario
+
+    new_scenario = scenario
+    for i, (actor, waypoint) in enumerate(waypoints.items()):
+
+        start_location = waypoint.transform.location
+        goal_location = find_goal(actor.behavior, waypoint)
+
+        gps_route, route = m.interpolate_trajectory(scenario.world, [start_location, goal_location])
+        _, actor_plan_temp  = gen_npc_route(gps_route, route)
+        actor_plan = [(m.CarlaDataProvider.get_map().get_waypoint(step[0].location)) for step in actor_plan_temp]
+
+        for p in actor_plan_temp:
+            waypoint = m.CarlaDataProvider.get_map().get_waypoint(p[0].location)
+            actor_plan.append((waypoint, m.RoadOption.LANEFOLLOW))
+        actor_behavior = t.composites.Sequence(policy=t.common.ParallelPolicy.SUCCESS_ON_ONE)
+        driving_distance = at.DriveDistance(
+            scenario.other_actors[0],
+            50,
+            name="Distance")
+
+        waypoint_follower = a.WaypointFollower(scenario.other_actors[i], 9, plan=actor_plan, avoid_collision=False)
+        actor_behavior.add_child(waypoint_follower)
+        actor_behavior.add_child(driving_distance)
+
+        if new_scenario.behavior_tree:
+            new_scenario.behavior_tree.add_child(actor_behavior)
+        else:
+            new_scenario.behavior_tree = t.composites.Sequence(children=actor_behavior)
+
+    return new_scenario
+    
 # This function returns a new scenario with the time defined by the user.
 def set_time(scenario: s.BasicScenario, time: c.Time) -> s.BasicScenario:
 
@@ -176,16 +238,18 @@ def filter_actors(routes: list[r.Route], actors: list[c.Actor]) -> list[r.Route]
 
 
 # This function gets the actor positions to use in defining the scenario_runner configuration.
-def get_actor_positions(route: r.Route, actors: list[c.Actor]) -> list[carla.Waypoint]:
+def get_actor_positions(route: r.Route, actors: list[c.Actor]) -> dict[c.Actor, carla.Waypoint]:
 
     # I use a dictionary so that I could fetch pre-existing reference waypoints to use.
-    waypoints = dict[str, carla.Waypoint]()
+    waypoints = dict[c.Actor, carla.Waypoint]()
     while len(actors) > len(waypoints):
         for actor in actors:
             # This block gets the reference waypoint that I use to get the current actor's waypoint.
             if actor.relation.object_name in [actor.name for actor in actors]:
                 if actor.relation.object_name in waypoints:
-                    object_waypoint = waypoints[actor.relation.object_name]
+                    # NOTE: object is already proven to exist with the first if, so I'm not checking again.
+                    objects = [object for object in actors if actor.relation.object_name == object.name]
+                    object_waypoint = waypoints[objects[0]]
                 else:
                     # This is a continue not an exception because maybe its dependency exists, just not reached yet.
                     continue
@@ -235,10 +299,10 @@ def get_actor_positions(route: r.Route, actors: list[c.Actor]) -> list[carla.Way
             # This part actually assigns the possible waypoints to the dictionary of waypoints.
             # If there's no possible waypoints, that actor is impossible to construct.
             if possible_waypoints != []:
-                waypoints[actor.name] = possible_waypoints[0]
+                waypoints[actor] = possible_waypoints[0]
             else:
                 raise Exception(
                     f"No possible waypoints that fit the criteria: {actor.relation}"
                 )
 
-    return list[carla.Waypoint](waypoints.values())
+    return waypoints
