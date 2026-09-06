@@ -1,0 +1,31 @@
+[project]
+name = "scenario-runner"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = []
+requires-python = ">=3.12"
+dependencies = [
+    "py-trees==0.8.3",
+    # Changed from ==
+    "numpy>1.24.4; python_version >= '3.0'",
+    "networkx==3.4.2",
+    "Shapely==2.1.1",
+    "psutil",
+    "xmlschema==1.0.18",
+    "ephem",
+    "tabulate",
+    "opencv-python==4.7.0.72",
+    "matplotlib",
+    "six",
+    "simple-watchdog-timer",
+    "antlr4-python3-runtime==4.10",
+    "graphviz",
+]
+
+[project.scripts]
+scenario-runner = "scenario_runner:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
