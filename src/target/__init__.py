@@ -32,11 +32,12 @@ def main() -> None:
 
     arguments = arguments_parser.parse_args()
 
+    # This part gets the variables from the argument parser so I don't have to arguments.___ every time.
     config_name = arguments.config_name
     carla_map_name = arguments.carla_map_name
     opendrive_map_name = arguments.opendrive_map_name
     ip = arguments.carla_ip
-    port = arguments.port
+    port = int(arguments.carla_port)
     if arguments.output is not None:
         output = arguments.output
     else:
@@ -62,7 +63,7 @@ def main() -> None:
     # for i, t in enumerate(topology):
     #     route = Route(i, t[0], t[1], map_info)
     #     routes.append(route)
-    routes = [r.Route(i, t[0], t[1], map) for i, t in enumerate(carla_map.get_topology())]
+    routes = [r.Route(i, t[0], t[1], opendrive_map) for i, t in enumerate(carla_map.get_topology())]
 
     # This part filters the routes.
     routes = f.find_road_type(routes, configuration.road.road_type)
@@ -70,10 +71,13 @@ def main() -> None:
     routes = f.find_lane_count(routes, configuration.road.lane_count)
     routes = f.find_props(routes, configuration.road.props, opendrive_map)
     routes = f.filter_actors(routes, configuration.actors)
-    # FIXME: Handle cases where there are no applicable routes.
-    waypoints = f.get_actor_positions(routes[0], configuration.actors)
+    if routes != []:
+        waypoints = f.get_actor_positions(routes[0], configuration.actors)
+    else:
+        print("There are no applicable paths on this map, sorry!")
+        return
 
-    # I see that in TARGET they use an extended ScenarioRunner and it doesn't look too bad.
+    # This part creates the XML file based on the template I see in other configuration XMLs.
     # NOTE: I can't just create a scenario. I can either take the entirety of ScenarioRunner, or I can turn ALL this into a scenario. I think all this fits into the init.
     # TODO: Use this to generate the XML.
     # NOTE: Thanks to:
@@ -81,11 +85,6 @@ def main() -> None:
                     # else:
                     #     config.other_parameters[elem.tag] = elem.attrib
     # We can secretly feed the scenario the configuration object by dumping it in the XML file. Perhaps as a JSON string.
-
-    # scenario_config = sc.ScenarioConfiguration()
-    # scenario = s.BasicScenario("TARGET Scenario", srunner.ego_vehicles, scenario_config, world)
-    # scenario = f.set_weather(scenario, configuration.weather)
-    # scenario = f.set_time(scenario, configuration.time)
     xml = etree.Element("scenarios")
     scenario_xml = etree.SubElement(xml, "scenario", name=config_name, type=config_name, town=carla_map_name)
     target_xml = etree.SubElement(scenario_xml, "target")
@@ -98,4 +97,5 @@ def main() -> None:
 
         _ = etree.SubElement(scenario_xml, name, x=waypoint.transform.location.x, y=waypoint.transform.location.y, z=waypoint.transform.location.z, yaw=waypoint.transform.rotation.yaw, model="vehicle.tesla.model3")
     xml_tree = etree.ElementTree(xml)
+    # NOTE: Pretty printed so it's easier to read
     xml_tree.write(output, pretty_print=True)
