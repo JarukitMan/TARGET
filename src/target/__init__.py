@@ -1,7 +1,7 @@
 import argparse
 import json
 
-# NOTE: For some reason shows as an error on the linter. etree is definitely there.
+# NOTE: For some reason shows as an error on the linter (ty). etree is definitely there.
 from lxml import etree
 
 import carla as c
@@ -19,22 +19,40 @@ import target.road_topology as r
 # Run the scenario
 def main() -> None:
 
-    # TODO: Make actual flags.
-    config_name = "TODO"
-    map_name = "TODO"
-    ip = "127.0.0.1"
-    port = 2000
+    # Required arguments
+    arguments_parser = argparse.ArgumentParser("target")
+    arguments_parser.add_argument("config_name")
+    arguments_parser.add_argument("carla_map_name")
+    arguments_parser.add_argument("opendrive_map_name")
+
+    # Optional flags
+    arguments_parser.add_argument("--carla-ip", default="127.0.0.1")
+    arguments_parser.add_argument("--carla-port", default=2000)
+    arguments_parser.add_argument("--output")
+
+    arguments = arguments_parser.parse_args()
+
+    config_name = arguments.config_name
+    carla_map_name = arguments.carla_map_name
+    opendrive_map_name = arguments.opendrive_map_name
+    ip = arguments.carla_ip
+    port = arguments.port
+    if arguments.output is not None:
+        output = arguments.output
+    else:
+        output = config_name + ".xml"
 
     with open(config_name, "r") as config_file:
         configuration = p.parse_config(config_file.read())
 
-    with open(map_name, "r") as map_file:
+    with open(opendrive_map_name, "r") as opendrive_map_file:
         # Copied from original TARGET.
-        map_xml = etree.parse(map_file).getroot()
-        map: o.OpenDrive = o.parse_opendrive(map_xml)
+        opendrive_map_xml = etree.parse(opendrive_map_file).getroot()
+        opendrive_map: o.OpenDrive = o.parse_opendrive(opendrive_map_xml)
 
     # Connect to CARLA Simulator and get the map.
     client = c.Client(host=ip, port=port)
+    client.load_world_if_different(carla_map_name)
     world = client.get_world()
     carla_map = world.get_map()
 
@@ -50,8 +68,9 @@ def main() -> None:
     routes = f.find_road_type(routes, configuration.road.road_type)
     routes = f.find_marker(routes, configuration.road.marker)
     routes = f.find_lane_count(routes, configuration.road.lane_count)
-    routes = f.find_props(routes, configuration.road.props, map)
+    routes = f.find_props(routes, configuration.road.props, opendrive_map)
     routes = f.filter_actors(routes, configuration.actors)
+    # FIXME: Handle cases where there are no applicable routes.
     waypoints = f.get_actor_positions(routes[0], configuration.actors)
 
     # I see that in TARGET they use an extended ScenarioRunner and it doesn't look too bad.
@@ -68,7 +87,7 @@ def main() -> None:
     # scenario = f.set_weather(scenario, configuration.weather)
     # scenario = f.set_time(scenario, configuration.time)
     xml = etree.Element("scenarios")
-    scenario_xml = etree.SubElement(xml, "scenario", name=config_name, type=config_name, town=map_name)
+    scenario_xml = etree.SubElement(xml, "scenario", name=config_name, type=config_name, town=carla_map_name)
     target_xml = etree.SubElement(scenario_xml, "target")
     _ = etree.SubElement(target_xml, json.dumps(configuration))
     for actor, waypoint in waypoints.items():
@@ -79,4 +98,4 @@ def main() -> None:
 
         _ = etree.SubElement(scenario_xml, name, x=waypoint.transform.location.x, y=waypoint.transform.location.y, z=waypoint.transform.location.z, yaw=waypoint.transform.rotation.yaw, model="vehicle.tesla.model3")
     xml_tree = etree.ElementTree(xml)
-    xml_tree.write(config_name + ".xml", pretty_print=True)
+    xml_tree.write(output, pretty_print=True)

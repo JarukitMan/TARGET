@@ -5,9 +5,9 @@
 - [x] Create the engine.
 - [x] Integrate PyYAML.
 - [x] Implement set_actor_behavior
-- [ ] Feed the configuration into ParsedScenario
+- [x] Feed the configuration into ParsedScenario
+- [x] Integrate argparse.
 - [ ] Integrate carla-simulator/scenario_runner
-- [ ] Integrate argparse.
 
 ## DSL Difference
 - Road signs can now be a list.
@@ -15,10 +15,9 @@
 - Road marker is now independent of road type.
 
 ## Usage
-target MAP.xodr SCENARIO.yaml
+target SCENARIO_YAML_FILE CARLA_MAP_NAME OPENDRIVE_MAP_XODR_FILE
 
 ### flags
-- --only-generate-xml: Only generates the XML file.
 - --carla-port: Changes the CARLA port. (Default: 2000)
 - --output OUTPUT: Prints the xml file to the output file instead of the standard output.
 
