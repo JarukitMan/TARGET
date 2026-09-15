@@ -8,7 +8,7 @@
 - [x] Feed the configuration into ParsedScenario
 - [x] Integrate argparse.
 - [x] Implement "Any" enumeration in case a constraint is not specified.
-- [ ] Find out why "actors = CarlaDataProvider.handle_actor_batch(batch, tick)" from srunner.scenariomanager.carla_data_provider:957 doesn't work.
+- [ ] BUG: The spawn points are reported to collide with some object, and so vehicles cannot be spawned.
 - [ ] Integrate carla-simulator/scenario_runner
 
 ## DSL Difference
