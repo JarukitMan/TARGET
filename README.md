@@ -7,12 +7,15 @@
 - [x] Implement set_actor_behavior
 - [x] Feed the configuration into ParsedScenario
 - [x] Integrate argparse.
+- [x] Implement "Any" enumeration in case a constraint is not specified.
+- [ ] Find out why "actors = CarlaDataProvider.handle_actor_batch(batch, tick)" from srunner.scenariomanager.carla_data_provider:957 doesn't work.
 - [ ] Integrate carla-simulator/scenario_runner
 
 ## DSL Difference
 - Road signs can now be a list.
 - Road lane count is now independent of road type. (int)
 - Road marker is now independent of road type.
+- Things not specified no longer have a default, instead allowing anything in that category.
 
 ## Usage
 target SCENARIO_YAML_FILE CARLA_MAP_NAME OPENDRIVE_MAP_XODR_FILE

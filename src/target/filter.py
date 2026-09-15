@@ -4,10 +4,10 @@ import py_trees as t
 
 import carla
 import target.opendriveparser.elements.openDrive as o
-import scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_behaviors as a
-import scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as at
-import scenario_runner.srunner.scenarios.open_scenario as s
-import scenario_runner.srunner.tools.route_manipulation as m
+import srunner.scenariomanager.scenarioatomics.atomic_behaviors as a
+import srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as at
+import srunner.scenarios.open_scenario as s
+import srunner.tools.route_manipulation as m
 import target.classes as c
 import target.road_topology as r
 
@@ -176,6 +176,8 @@ def find_road_type(routes: list[r.Route], road_type: c.RoadType) -> list[r.Route
         routes = [route for route in routes if route.is_t_intersection(routes)]
     elif road_type == c.RoadType.INTERSECTION:
         routes = [route for route in routes if route.is_intersection(routes)]
+    elif road_type == c.RoadType.ANY:
+        pass
 
     return routes
 
@@ -203,6 +205,8 @@ def find_props(
 
 # This function filters the routes by the road marker.
 def find_marker(routes: list[r.Route], marker: c.RoadMarker) -> list[r.Route]:
+    if marker == c.RoadMarker.ANY:
+        pass
     if marker == c.RoadMarker.SOLID_LINE:
         routes = [
             route
@@ -215,7 +219,10 @@ def find_marker(routes: list[r.Route], marker: c.RoadMarker) -> list[r.Route]:
 
 # This function filters the routes by the amount of lanes.
 def find_lane_count(routes: list[r.Route], lane_count: int) -> list[r.Route]:
-    return [route for route in routes if route.num_lanes == lane_count]
+    if lane_count > 0:
+        return [route for route in routes if route.num_lanes == lane_count]
+    else:
+        return routes
 
 
 # This function filters by the actions all the actors want to take.
@@ -238,8 +245,9 @@ def filter_actors(routes: list[r.Route], actors: list[c.Actor]) -> list[r.Route]
     return routes
 
 
+# TODO: Spawn point collision test.
 # This function gets the actor positions to use in defining the scenario_runner configuration.
-def get_actor_positions(route: r.Route, actors: list[c.Actor]) -> dict[c.Actor, carla.Waypoint]:
+def get_actor_positions(route: r.Route, actors: list[c.Actor], client: carla.Client) -> dict[c.Actor, carla.Waypoint]:
 
     # I use a dictionary so that I could fetch pre-existing reference waypoints to use.
     waypoints = dict[c.Actor, carla.Waypoint]()

@@ -3,6 +3,7 @@ from enum import Enum
 
 
 class RoadType(str, Enum):
+    ANY = "any"
     ROUNDABOUT = "roundabout"
     STRAIGHT = "straight road"
     T_INTERSECTION = "t-intersection"
@@ -19,6 +20,7 @@ class Prop(str, Enum):
 
 
 class RoadMarker(str, Enum):
+    ANY = "any"
     NONE = "None"
     SOLID_LINE = "solid line"
     # BROKEN_LINE = "broken line"

@@ -1,24 +1,28 @@
-import json
-
 import py_trees
+import yaml
+from srunner.scenariomanager.scenarioatomics.atomic_criteria import (
+    CollisionTest,
+)
+from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
+    InTriggerDistanceToLocation,
+)
+from srunner.scenarios.basic_scenario import BasicScenario
 
 import target.filter as f
 import target.road_topology as r
-from scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_criteria import (
-    CollisionTest,
-)
-from scenario_runner.srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
-    InTriggerDistanceToLocation,
-)
-from scenario_runner.srunner.scenarios.basic_scenario import BasicScenario
 from target.classes import Configuration, Prop
 from target.filter import set_behavior, set_traffic_light, set_weather
+import pprint
 
 
 class ParsedScenario(BasicScenario):
 
+    # NOTE: Taken from other non-basic scenarios since not implementing it creates an error with "randomize" not being defined on the basic scenario.
+    def __init__(self, world, ego_vehicles, config, randomize=False, debug_mode=False, criteria_enable=True, timeout=60):
+        super().__init__("ParsedScenario", ego_vehicles, config, world, debug_mode, terminate_on_failure=True, criteria_enable=criteria_enable)
+
     def _create_behavior(self) -> py_trees.composites.Composite:
-        self.behavior_config: Configuration = json.loads(self.config['target'])
+        self.behavior_config: Configuration = yaml.safe_load(self.config['target'].get("body"))
 
         # This part filters the routes.
         map = self.world.get_map()

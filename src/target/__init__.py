@@ -1,12 +1,13 @@
 import argparse
-import json
+
+import yaml
 
 # NOTE: For some reason shows as an error on the linter (ty). etree is definitely there.
 from lxml import etree
 
 import carla as c
-import target.opendriveparser.parser as o
 import target.filter as f
+import target.opendriveparser.parser as o
 import target.parser as p
 import target.road_topology as r
 
@@ -67,10 +68,15 @@ def main() -> None:
 
     # This part filters the routes.
     routes = f.find_road_type(routes, configuration.road.road_type)
+    print(routes)
     routes = f.find_marker(routes, configuration.road.marker)
+    print(routes)
     routes = f.find_lane_count(routes, configuration.road.lane_count)
+    print(routes)
     routes = f.find_props(routes, configuration.road.props, opendrive_map)
+    print(routes)
     routes = f.filter_actors(routes, configuration.actors)
+    print(routes)
     if routes != []:
         waypoints = f.get_actor_positions(routes[0], configuration.actors)
     else:
@@ -86,16 +92,15 @@ def main() -> None:
                     #     config.other_parameters[elem.tag] = elem.attrib
     # We can secretly feed the scenario the configuration object by dumping it in the XML file. Perhaps as a JSON string.
     xml = etree.Element("scenarios")
-    scenario_xml = etree.SubElement(xml, "scenario", name=config_name, type=config_name, town=carla_map_name)
-    target_xml = etree.SubElement(scenario_xml, "target")
-    _ = etree.SubElement(target_xml, json.dumps(configuration))
+    scenario_xml = etree.SubElement(xml, "scenario", name="ParsedScenario", type="ParsedScenario", town=carla_map_name)
+    _ = etree.SubElement(scenario_xml, "target", body=yaml.dump(configuration))
     for actor, waypoint in waypoints.items():
         if actor.name == "ego":
             name = "ego_vehicle"
         else:
             name = "other_actor"
 
-        _ = etree.SubElement(scenario_xml, name, x=waypoint.transform.location.x, y=waypoint.transform.location.y, z=waypoint.transform.location.z, yaw=waypoint.transform.rotation.yaw, model="vehicle.tesla.model3")
+        _ = etree.SubElement(scenario_xml, name, x=str(waypoint.transform.location.x), y=str(waypoint.transform.location.y), z=str(waypoint.transform.location.z), yaw=str(waypoint.transform.rotation.yaw), model="vehicle.tesla.model3")
     xml_tree = etree.ElementTree(xml)
     # NOTE: Pretty printed so it's easier to read
     xml_tree.write(output, pretty_print=True)

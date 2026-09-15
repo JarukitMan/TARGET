@@ -1,14 +1,14 @@
 import yaml as y
 
 import carla
-import target.opendriveparser.elements.openDrive as o
 import target.classes as c
+import target.opendriveparser.elements.openDrive as o
 import target.road_topology as r
 
 
 def parse_config(config: str) -> c.Configuration:
     # Default configuration
-    road = c.Road(2, False, c.RoadMarker.NONE, c.RoadType.STRAIGHT, [])
+    road = c.Road(0, False, c.RoadMarker.ANY, c.RoadType.ANY, [])
     configuration = c.Configuration([], road, c.Weather.SUNNY, c.Time.DAY)
     dictionary = y.load(config, y.FullLoader)
 
