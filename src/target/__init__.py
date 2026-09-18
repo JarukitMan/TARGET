@@ -12,7 +12,6 @@ import target.parser as p
 import target.road_topology as r
 
 
-# TODO: Make this file the `runner`. Meaning this parses the flags and calls the scenario runner.
 # Read the configuration
 # Get the routes
 # Create a basic scenario
@@ -68,24 +67,18 @@ def main() -> None:
 
     # This part filters the routes.
     routes = f.find_road_type(routes, configuration.road.road_type)
-    print(routes)
     routes = f.find_marker(routes, configuration.road.marker)
-    print(routes)
     routes = f.find_lane_count(routes, configuration.road.lane_count)
-    print(routes)
     routes = f.find_props(routes, configuration.road.props, opendrive_map)
-    print(routes)
     routes = f.filter_actors(routes, configuration.actors)
-    print(routes)
     if routes != []:
-        waypoints = f.get_actor_positions(routes[0], configuration.actors)
+        waypoints = f.get_actor_positions(routes, configuration.actors, client)
     else:
         print("There are no applicable paths on this map, sorry!")
         return
 
     # This part creates the XML file based on the template I see in other configuration XMLs.
     # NOTE: I can't just create a scenario. I can either take the entirety of ScenarioRunner, or I can turn ALL this into a scenario. I think all this fits into the init.
-    # TODO: Use this to generate the XML.
     # NOTE: Thanks to:
                     # # Any other possible element, add it as a config attribute
                     # else:
@@ -103,4 +96,6 @@ def main() -> None:
         _ = etree.SubElement(scenario_xml, name, x=str(waypoint.transform.location.x), y=str(waypoint.transform.location.y), z=str(waypoint.transform.location.z), yaw=str(waypoint.transform.rotation.yaw), model="vehicle.tesla.model3")
     xml_tree = etree.ElementTree(xml)
     # NOTE: Pretty printed so it's easier to read
-    xml_tree.write(output, pretty_print=True)
+    xml_string: str = etree.tostring(xml_tree, pretty_print=True, encoding='unicode')
+    with open(output, "w") as output_file:
+        output_file.write(xml_string)

@@ -8,7 +8,7 @@
 - [x] Feed the configuration into ParsedScenario
 - [x] Integrate argparse.
 - [x] Implement "Any" enumeration in case a constraint is not specified.
-- [ ] BUG: The spawn points are reported to collide with some object, and so vehicles cannot be spawned.
+- [ ] BUG: The spawn points are reported to collide with some object, and so vehicles cannot be spawned. Might need to do some next iteration with the waypoints if all generated waypoints are not possible.
 - [ ] Integrate carla-simulator/scenario_runner
 
 ## DSL Difference

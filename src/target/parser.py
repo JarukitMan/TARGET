@@ -79,6 +79,8 @@ def get_actors(actors_dictionary: dict) -> list[c.Actor]:
 
                 if "Position reference" in actor_position:
                     actor_position_reference = actor_position["Position reference"]
+                    if actor_position_reference == "Ego vehicle":
+                        actor_position_reference = "ego"
                     actor_relation = c.Relation(actor_relation.relation, actor_relation.distance, actor_position_reference)
 
                 if "Position relation" in actor_position:

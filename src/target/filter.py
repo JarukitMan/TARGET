@@ -3,6 +3,7 @@ import copy
 import py_trees as t
 
 import carla
+import carla.command
 import target.opendriveparser.elements.openDrive as o
 import srunner.scenariomanager.scenarioatomics.atomic_behaviors as a
 import srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions as at
@@ -49,14 +50,14 @@ def set_traffic_light(scenario: s.BasicScenario, red_light: bool) -> s.BasicScen
     traffic_light_behavior = t.composites.Sequence(
         policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
     )
-    traffic_lights = copy.deepcopy(m.CarlaDataProvider._traffic_light_map)
+    traffic_lights = m.CarlaDataProvider._traffic_light_map
 
-    if red_light:
-        traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_lights, carla.TrafficLightState.Red))
-    else:
-        for traffic_light in traffic_lights:
+    for traffic_light in traffic_lights:
+        if red_light:
+            traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_light, carla.TrafficLightState.Red))
+        else:
             traffic_light.set_red_time(3)
-        traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_lights, carla.TrafficLightState.Green))
+            traffic_light_behavior.add_child(a.TrafficLightStateSetter(traffic_light, carla.TrafficLightState.Green))
 
     traffic_light_behavior.add_child(a.Idle(60))
 
@@ -102,12 +103,13 @@ def set_behavior(scenario: s.BasicScenario, waypoints: dict[c.Actor, carla.Waypo
         return scenario
 
     new_scenario = scenario
-    for i, (actor, waypoint) in enumerate(waypoints.items()):
+    new_waypoints = {actor: waypoint for actor, waypoint in waypoints.items() if actor.name != "ego"}
+    for i, (actor, waypoint) in enumerate(new_waypoints.items()):
 
         start_location = waypoint.transform.location
-        goal_location = find_goal(actor.behavior, waypoint)
+        goal_location = find_goal(actor.behavior, waypoint).transform.location
 
-        gps_route, route = m.interpolate_trajectory(scenario.world, [start_location, goal_location])
+        gps_route, route = m.interpolate_trajectory([start_location, goal_location])
         _, actor_plan_temp  = gen_npc_route(gps_route, route)
         actor_plan = [(m.CarlaDataProvider.get_map().get_waypoint(step[0].location)) for step in actor_plan_temp]
 
@@ -245,73 +247,163 @@ def filter_actors(routes: list[r.Route], actors: list[c.Actor]) -> list[r.Route]
     return routes
 
 
-# TODO: Spawn point collision test.
 # This function gets the actor positions to use in defining the scenario_runner configuration.
-def get_actor_positions(route: r.Route, actors: list[c.Actor], client: carla.Client) -> dict[c.Actor, carla.Waypoint]:
-
-    # I use a dictionary so that I could fetch pre-existing reference waypoints to use.
-    waypoints = dict[c.Actor, carla.Waypoint]()
-    while len(actors) > len(waypoints):
-        for actor in actors:
-            # This block gets the reference waypoint that I use to get the current actor's waypoint.
-            if actor.relation.object_name in [actor.name for actor in actors]:
-                if actor.relation.object_name in waypoints:
-                    # NOTE: object is already proven to exist with the first if, so I'm not checking again.
-                    objects = [object for object in actors if actor.relation.object_name == object.name]
-                    object_waypoint = waypoints[objects[0]]
+# Iterates through all the possible routes and set the waypoints of the actors that reference the road
+# before passing it to the recursive find_combination.
+def get_actor_positions(routes: list[r.Route], actors: list[c.Actor], client: carla.Client) -> dict[c.Actor, carla.Waypoint]:
+    world = client.get_world()
+    blueprint = world.get_blueprint_library().find("vehicle.tesla.model3")
+    actor_names = [actor.name for actor in actors]
+    dependent_actors = [actor for actor in actors if actor.relation.object_name in actor_names]
+    for route in routes:
+        possible_concrete_waypoints = find_possible_concrete_waypoints(route.start_waypoint, actors, actor_names)
+                
+        for concrete_waypoints in possible_concrete_waypoints:
+            # print(concrete_waypoints)
+            concrete_actors = list[carla.Actor]()
+            for concrete_waypoint in concrete_waypoints.values():
+                transform = concrete_waypoint.transform
+                transform.location.z = 0.5
+                concrete_actor = world.try_spawn_actor(blueprint, transform)
+                if concrete_actor is not None:
+                    concrete_actors.append(concrete_actor)
                 else:
-                    # This is a continue not an exception because maybe its dependency exists, just not reached yet.
-                    continue
-            else:
-                # This is in the case where the reference is the road. I don't really care about the details.
-                object_waypoint = route.start_waypoint
+                    print("Can't spawn concrete actor! Might cause bugs!")
+            combination = find_combination(dependent_actors, concrete_waypoints, world, blueprint)
+            [concrete_actor.destroy() for concrete_actor in concrete_actors]
+            if combination is not None:
+                print(combination)
+                return combination
+    raise ValueError("We can't find a suitable spawn point for vehicles as detailed in this rule. Sorry.")
 
-            # This block gets the possible waypoints from the reference waypoint
-            possible_waypoints = []
-            if actor.relation.relation == c.RelationType.BEHIND:
-                possible_waypoints = object_waypoint.previous(actor.relation.distance)
-            elif actor.relation.relation == c.RelationType.FRONT:
-                possible_waypoints = object_waypoint.next(actor.relation.distance)
-            elif actor.relation.relation == c.RelationType.IN:
-                possible_waypoints = [object_waypoint]
-            elif actor.relation.relation == c.RelationType.LEFT:
-                possible_waypoint = object_waypoint.get_left_lane()
-                if possible_waypoint != None:
-                    possible_waypoints = [possible_waypoint]
-            elif actor.relation.relation == c.RelationType.LEFT_BEHIND:
-                possible_waypoint = object_waypoint.get_left_lane()
-                if possible_waypoint != None:
-                    possible_waypoints = possible_waypoint.previous(
-                        actor.relation.distance
-                    )
-            elif actor.relation.relation == c.RelationType.LEFT_FRONT:
-                possible_waypoint = object_waypoint.get_left_lane()
-                if possible_waypoint != None:
-                    possible_waypoints = possible_waypoint.next(actor.relation.distance)
-            elif actor.relation.relation == c.RelationType.ON:
-                possible_waypoints = [object_waypoint]
-            elif actor.relation.relation == c.RelationType.RIGHT:
-                possible_waypoint = object_waypoint.get_right_lane()
-                if possible_waypoint != None:
-                    possible_waypoints = [possible_waypoint]
-            elif actor.relation.relation == c.RelationType.RIGHT_BEHIND:
-                possible_waypoint = object_waypoint.get_right_lane()
-                if possible_waypoint != None:
-                    possible_waypoints = possible_waypoint.previous(
-                        actor.relation.distance
-                    )
-            elif actor.relation.relation == c.RelationType.RIGHT_FRONT:
-                possible_waypoint = object_waypoint.get_right_lane()
-                if possible_waypoint != None:
-                    possible_waypoints = possible_waypoint.next(actor.relation.distance)
+def find_possible_concrete_waypoints(waypoint: carla.Waypoint, actors: list[c.Actor], actor_names: list[str]) -> list[dict[c.Actor, carla.Waypoint]]:
+    # Recursion base-case
+    if actors == []:
+        return []
+    actor = actors[0]
+    # Skip this one if it's not a concrete waypoint
+    if actor.relation.object_name in actor_names:
+        return find_possible_concrete_waypoints(waypoint, actors[1:], actor_names)
 
-            # This part actually assigns the possible waypoints to the dictionary of waypoints.
-            # If there's no possible waypoints, that actor is impossible to construct.
-            if possible_waypoints != []:
-                waypoints[actor] = possible_waypoints[0]
-            else:
-                raise Exception(
-                    f"No possible waypoints that fit the criteria: {actor.relation}"
-                )
+    concrete_waypoints = transform_based_on_relation(actor, waypoint)
+    search_result = find_possible_concrete_waypoints(waypoint, actors[1:], actor_names)
+    # Handle cases where this is the last valid member.
+    if search_result == []:
+        return [{actor: concrete_waypoint} for concrete_waypoint in concrete_waypoints]
 
-    return waypoints
+    output = list[dict[c.Actor, carla.Waypoint]]()
+    for concrete_waypoint in concrete_waypoints:
+        new_search_result = list[dict[c.Actor, carla.Waypoint]]()
+        for member in search_result:
+            new_member = member
+            new_member[actor] = concrete_waypoint
+            new_search_result.append(new_member)
+        output = output + new_search_result
+
+    return output
+
+# TODO: This needs to be a recursive search so that it covers every combination.
+# Inputs would be: (anchor waypoint, world (or client), actors)
+    # Find places to spawn the guy from waypoints dictionary, if reference doesn't exist yet, call on the reference.
+    # We are not afraid of cyclic dependencies because you REALLY shouldn't write a rule with cyclic dependencies anyways.
+    # Spawn the guy
+    # Recursively call for the next actor
+    # If fail, go to the next possible spawn of the guy
+def find_combination(actors: list[c.Actor], waypoints: dict[c.Actor, carla.Waypoint], world: carla.World, blueprint: carla.ActorBlueprint) -> dict[c.Actor, carla.Waypoint] | None:
+    # Recursion base-case
+    if actors == []:
+        return waypoints
+
+
+    main_actor = actors[0]
+    # Find the reference this actor uses in the dictionary.
+    for actor, waypoint in waypoints.items():
+        if actor.name == main_actor.relation.object_name:
+            reference_waypoint = waypoint
+            break
+    else:
+        for actor in actors:
+            if actor.name == main_actor.relation.object_name:
+                reference_actor = actor
+                break
+        else:
+            print("Can't find the actor's relation object!", main_actor.name, main_actor.relation.object_name)
+            return None
+        new_actors = actors
+        new_actors.remove(reference_actor)
+        new_actors = [reference_actor] + new_actors
+        new_waypoints = find_combination(new_actors, waypoints, world, blueprint)
+        if new_waypoints is None:
+            return None
+        reference_waypoint = new_waypoints[actor]
+
+    # Get the possible waypoints this guy can use.
+    possible_waypoints = transform_based_on_relation(main_actor, reference_waypoint)
+
+    # This block tries to recursively call the children to try all the possible locations this one could be in
+    for possible_waypoint in possible_waypoints:
+        transform = possible_waypoint.transform
+        transform.location.z = 0.5
+        actor = world.try_spawn_actor(blueprint, transform)
+        if actor is not None:
+            print("Spawned actor at", transform)
+            new_waypoints = waypoints
+            new_waypoints[main_actor] = possible_waypoint
+            search_result = find_combination(actors[1:], new_waypoints, world, blueprint)
+            # This only returns when there is a result, so this loop will not break until
+            # all possibilities have been exhausted or we find a combination.
+            if search_result is not None:
+                # Cleanup after the work is done.
+                actor.destroy()
+                new_search_result = search_result
+                new_search_result[main_actor] = possible_waypoint
+                return new_search_result
+            # Cleanup possible obstacle from previous search attempt.
+            actor.destroy()
+        else:
+            print("Can't spawn actor at", transform)
+    # All possibilities exhausted
+    return None
+
+# This helper function gets the possible waypoints from the reference waypoint
+def transform_based_on_relation(actor: c.Actor, object_waypoint: carla.Waypoint) -> list[carla.Waypoint]:
+    possible_waypoints = []
+    if actor.relation.relation == c.RelationType.BEHIND:
+        possible_waypoints = object_waypoint.previous(actor.relation.distance)
+    elif actor.relation.relation == c.RelationType.FRONT:
+        possible_waypoints = object_waypoint.next(actor.relation.distance)
+    elif actor.relation.relation == c.RelationType.IN:
+        possible_waypoints = [object_waypoint]
+    elif actor.relation.relation == c.RelationType.LEFT:
+        possible_waypoint = object_waypoint.get_left_lane()
+        if possible_waypoint != None:
+            possible_waypoints = [possible_waypoint]
+    elif actor.relation.relation == c.RelationType.LEFT_BEHIND:
+        possible_waypoint = object_waypoint.get_left_lane()
+        if possible_waypoint != None:
+            possible_waypoints = possible_waypoint.previous(
+                actor.relation.distance
+            )
+    elif actor.relation.relation == c.RelationType.LEFT_FRONT:
+        possible_waypoint = object_waypoint.get_left_lane()
+        if possible_waypoint != None:
+            possible_waypoints = possible_waypoint.next(actor.relation.distance)
+    elif actor.relation.relation == c.RelationType.ON:
+        possible_waypoints = [object_waypoint]
+    elif actor.relation.relation == c.RelationType.RIGHT:
+        possible_waypoint = object_waypoint.get_right_lane()
+        if possible_waypoint != None:
+            possible_waypoints = [possible_waypoint]
+    elif actor.relation.relation == c.RelationType.RIGHT_BEHIND:
+        possible_waypoint = object_waypoint.get_right_lane()
+        if possible_waypoint != None:
+            possible_waypoints = possible_waypoint.previous(
+                actor.relation.distance
+            )
+    elif actor.relation.relation == c.RelationType.RIGHT_FRONT:
+        possible_waypoint = object_waypoint.get_right_lane()
+        if possible_waypoint != None:
+            possible_waypoints = possible_waypoint.next(actor.relation.distance)
+
+    return possible_waypoints
+

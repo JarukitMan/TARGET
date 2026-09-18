@@ -1,5 +1,7 @@
+import carla
 import py_trees
 import yaml
+from lxml import etree
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import (
     CollisionTest,
 )
@@ -12,6 +14,7 @@ import target.filter as f
 import target.road_topology as r
 from target.classes import Configuration, Prop
 from target.filter import set_behavior, set_traffic_light, set_weather
+from target.opendriveparser.parser import OpenDrive, parse_opendrive
 import pprint
 
 
@@ -22,17 +25,25 @@ class ParsedScenario(BasicScenario):
         super().__init__("ParsedScenario", ego_vehicles, config, world, debug_mode, terminate_on_failure=True, criteria_enable=criteria_enable)
 
     def _create_behavior(self) -> py_trees.composites.Composite:
-        self.behavior_config: Configuration = yaml.safe_load(self.config['target'].get("body"))
+        self.behavior_config: Configuration = yaml.unsafe_load(self.config.other_parameters['target'].get("body"))
 
         # This part filters the routes.
-        map = self.world.get_map()
-        routes = [r.Route(i, t[0], t[1], map) for i, t in enumerate(map.get_topology())]
+        carla_map = self.world.get_map()
+        opendrive_map_string = carla_map.to_opendrive()
+
+        utf8_parser = etree.XMLParser(encoding='utf-8')
+        opendrive_map_unicode = opendrive_map_string.encode('utf-8')
+        opendrive_map_xml = etree.fromstring(opendrive_map_unicode, parser=utf8_parser)
+        opendrive_map: OpenDrive = parse_opendrive(opendrive_map_xml)
+
+        routes = [r.Route(i, t[0], t[1], opendrive_map) for i, t in enumerate(carla_map.get_topology())]
         routes = f.find_road_type(routes, self.behavior_config.road.road_type)
         routes = f.find_marker(routes, self.behavior_config.road.marker)
         routes = f.find_lane_count(routes, self.behavior_config.road.lane_count)
-        routes = f.find_props(routes, self.behavior_config.road.props, map)
+        routes = f.find_props(routes, self.behavior_config.road.props, opendrive_map)
         routes = f.filter_actors(routes, self.behavior_config.actors)
-        waypoints = f.get_actor_positions(routes[0], self.behavior_config.actors)
+        # FIXME: Calling a carla.Client() here feels hacky.
+        waypoints = f.get_actor_positions(routes, self.behavior_config.actors, carla.Client())
 
         # This part sets the behaviors.
         new_self = set_traffic_light(self, Prop.TRAFFIC_LIGHT in self.behavior_config.road.props)
@@ -41,6 +52,7 @@ class ParsedScenario(BasicScenario):
 
 
         end_condition = InTriggerDistanceToLocation(self.ego_vehicles[0],
+                                                    # TODO: There's definitely a way to take the ego vehicle's waypoint out of self.config.
                                                     next(waypoint for actor, waypoint in waypoints.items() if actor.name == 'ego'),
                                                     3,
                                                     name="ego reaches its destination")
