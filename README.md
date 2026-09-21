@@ -11,6 +11,7 @@
 - [x] BUG: The spawn points are reported to collide with some object, and so vehicles cannot be spawned. Might need to do some next iteration with the waypoints if all generated waypoints are not possible.
 - [x] BUG: Rewrite the set_X functions so that it returns the new bahvior tree instead of the new scenario. The current version creates a recursion loop.
 - [x] Integrate carla-simulator/scenario_runner
+- [ ] Include launch options to allow for ease of usage.
 - [ ] Test the systems.
 
 ## DSL Difference
