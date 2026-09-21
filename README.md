@@ -9,8 +9,9 @@
 - [x] Integrate argparse.
 - [x] Implement "Any" enumeration in case a constraint is not specified.
 - [x] BUG: The spawn points are reported to collide with some object, and so vehicles cannot be spawned. Might need to do some next iteration with the waypoints if all generated waypoints are not possible.
-- [ ] BUG: Rewrite the set_X functions so that it returns the new bahvior tree instead of the new scenario. The current version creates a recursion loop.
-- [ ] Integrate carla-simulator/scenario_runner
+- [x] BUG: Rewrite the set_X functions so that it returns the new bahvior tree instead of the new scenario. The current version creates a recursion loop.
+- [x] Integrate carla-simulator/scenario_runner
+- [ ] Test the systems.
 
 ## DSL Difference
 - Road signs can now be a list.

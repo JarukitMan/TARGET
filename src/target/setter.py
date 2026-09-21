@@ -9,9 +9,9 @@ import srunner.tools.route_manipulation as m
 import target.classes as c
 
 # This function returns a new scenario with the weather defined by the user.
-def set_weather(scenario: s.BasicScenario, weather: c.Weather) -> s.BasicScenario:
+def set_weather(scenario: s.BasicScenario, weather: c.Weather) -> t.composites.Sequence:
 
-    new_scenario = scenario
+    new_behavior_tree = scenario.behavior_tree
     weather_behavior = t.composites.Sequence(
         policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
     )
@@ -31,17 +31,17 @@ def set_weather(scenario: s.BasicScenario, weather: c.Weather) -> s.BasicScenari
         weather_behavior.add_child(a.ChangeWeather(new_weather))
         weather_behavior.add_child(a.Idle(0.2))
 
-    if new_scenario.behavior_tree:
-        new_scenario.behavior_tree.add_child(weather_behavior)
+    if new_behavior_tree:
+        new_behavior_tree.add_child(weather_behavior)
     else:
-        new_scenario.behavior_tree = t.composites.Sequence(children=weather_behavior)
+        new_behavior_tree = t.composites.Sequence(children=weather_behavior)
 
-    return new_scenario
+    return new_behavior_tree
 
 
-def set_traffic_light(scenario: s.BasicScenario, red_light: bool) -> s.BasicScenario:
+def set_traffic_light(scenario: s.BasicScenario, red_light: bool) -> t.composites.Sequence:
 
-    new_scenario = scenario
+    new_behavior_tree = scenario.behavior_tree
     traffic_light_behavior = t.composites.Sequence(
         policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
     )
@@ -56,12 +56,12 @@ def set_traffic_light(scenario: s.BasicScenario, red_light: bool) -> s.BasicScen
 
     traffic_light_behavior.add_child(a.Idle(60))
 
-    if new_scenario.behavior_tree:
-        new_scenario.behavior_tree.add_child(traffic_light_behavior)
+    if new_behavior_tree:
+        new_behavior_tree.add_child(traffic_light_behavior)
     else:
-        new_scenario.behavior_tree = t.composites.Sequence(children=traffic_light_behavior)
+        new_behavior_tree = t.composites.Sequence(children=traffic_light_behavior)
 
-    return new_scenario
+    return new_behavior_tree
 
 # Helper
 def find_goal(behavior: c.Behavior, waypoint: carla.Waypoint) -> carla.Waypoint:
@@ -92,12 +92,9 @@ def gen_npc_route(global_plan_gps, global_plan_world_coord):
     return route_plan, route_world_coord
     
 # NOTE: Modified from the original TARGET code.
-def set_behavior(scenario: s.BasicScenario, waypoints: dict[c.Actor, carla.Waypoint]) -> s.BasicScenario:
-    # behaviors for other actors
-    if len(waypoints) <= 1:
-        return scenario
+def set_behavior(scenario: s.BasicScenario, waypoints: dict[c.Actor, carla.Waypoint]) -> t.composites.Sequence:
 
-    new_scenario = scenario
+    new_behavior_tree = scenario.behavior_tree
     new_waypoints = {actor: waypoint for actor, waypoint in waypoints.items() if actor.name != "ego"}
     for i, (actor, waypoint) in enumerate(new_waypoints.items()):
 
@@ -108,8 +105,8 @@ def set_behavior(scenario: s.BasicScenario, waypoints: dict[c.Actor, carla.Waypo
         _, actor_plan_temp  = gen_npc_route(gps_route, route)
         actor_plan = [(m.CarlaDataProvider.get_map().get_waypoint(step[0].location)) for step in actor_plan_temp]
 
-        for p in actor_plan_temp:
-            waypoint = m.CarlaDataProvider.get_map().get_waypoint(p[0].location)
+        for plan in actor_plan_temp:
+            waypoint = m.CarlaDataProvider.get_map().get_waypoint(plan[0].location)
             actor_plan.append((waypoint, m.RoadOption.LANEFOLLOW))
         actor_behavior = t.composites.Sequence(policy=t.common.ParallelPolicy.SUCCESS_ON_ONE)
         driving_distance = at.DriveDistance(
@@ -121,17 +118,21 @@ def set_behavior(scenario: s.BasicScenario, waypoints: dict[c.Actor, carla.Waypo
         actor_behavior.add_child(waypoint_follower)
         actor_behavior.add_child(driving_distance)
 
-        if new_scenario.behavior_tree:
-            new_scenario.behavior_tree.add_child(actor_behavior)
+        if new_behavior_tree:
+            new_behavior_tree.add_child(actor_behavior)
         else:
-            new_scenario.behavior_tree = t.composites.Sequence(children=actor_behavior)
+            new_behavior_tree = t.composites.Sequence(children=actor_behavior)
 
-    return new_scenario
+    # When I'm alone.
+    if new_behavior_tree is None:
+        return t.composites.Sequence()
+
+    return new_behavior_tree
     
 # This function returns a new scenario with the time defined by the user.
-def set_time(scenario: s.BasicScenario, time: c.Time) -> s.BasicScenario:
+def set_time(scenario: s.BasicScenario, time: c.Time) -> t.composites.Sequence:
 
-    new_scenario = scenario
+    new_behavior_tree = scenario.behavior_tree
     time_behavior = t.composites.Sequence(
         policy=t.common.ParallelPolicy.SUCCESS_ON_ONE
     )
@@ -148,11 +149,9 @@ def set_time(scenario: s.BasicScenario, time: c.Time) -> s.BasicScenario:
         time_behavior.add_child(a.ChangeWeather(new_time))
         time_behavior.add_child(a.Idle(0.2))
 
-    if new_scenario.behavior_tree:
-        new_scenario.behavior_tree.add_child(time_behavior)
+    if new_behavior_tree:
+        new_behavior_tree.add_child(time_behavior)
     else:
-        new_scenario.behavior_tree = t.composites.Sequence(children=time_behavior)
+        new_behavior_tree = t.composites.Sequence(children=time_behavior)
 
-    return new_scenario
-
-
+    return new_behavior_tree

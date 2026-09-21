@@ -46,23 +46,24 @@ class ParsedScenario(BasicScenario):
         waypoints = f.get_actor_positions(routes, self.behavior_config.actors, carla.Client())
 
         # This part sets the behaviors.
-        new_self = set_traffic_light(self, Prop.TRAFFIC_LIGHT in self.behavior_config.road.props)
-        new_self = set_weather(new_self, self.behavior_config.weather)
-        new_self = set_behavior(new_self, waypoints)
+        new_behavior_tree = set_traffic_light(self, Prop.TRAFFIC_LIGHT in self.behavior_config.road.props)
+        self.behavior_tree = new_behavior_tree
+        new_behavior_tree = set_weather(self, self.behavior_config.weather)
+        self.behavior_tree = new_behavior_tree
+        new_behavior_tree = set_behavior(self, waypoints)
+        # NOTE: Had to be reset to Sequence so that the scenario tree does not encounter a recursion error or a type error.
+        self.behavior_tree = py_trees.composites.Sequence()
 
 
         end_condition = InTriggerDistanceToLocation(self.ego_vehicles[0],
                                                     # TODO: There's definitely a way to take the ego vehicle's waypoint out of self.config.
-                                                    next(waypoint for actor, waypoint in waypoints.items() if actor.name == 'ego'),
+                                                    self.ego_vehicles[0].bounding_box.location,
                                                     3,
                                                     name="ego reaches its destination")
 
-        # NOTE: Can't be none so if it's none here something is seriously wrong.
-        if new_self.behavior_tree is None:
-            raise ValueError
-        new_self.behavior_tree.add_child(end_condition)
+        new_behavior_tree.add_child(end_condition)
         # py_trees.display.render_dot_tree(root)
-        return new_self.behavior_tree
+        return new_behavior_tree
 
     # TODO: We'll decide on what to test later...
     def _create_test_criteria(self):
