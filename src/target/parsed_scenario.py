@@ -13,7 +13,7 @@ from srunner.scenarios.basic_scenario import BasicScenario
 import target.filter as f
 import target.road_topology as r
 from target.classes import Configuration, Prop
-from target.filter import set_behavior, set_traffic_light, set_weather
+from target.setter import set_behavior, set_traffic_light, set_weather
 from target.opendriveparser.parser import OpenDrive, parse_opendrive
 import pprint
 
