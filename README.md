@@ -23,7 +23,14 @@
 ## Usage
 target SCENARIO_YAML_FILE CARLA_MAP_NAME OPENDRIVE_MAP_XODR_FILE
 
-### flags
+then run scenario runner as you normally would. In my case, it was this two-line command:
+```
+uv run python -c 'import carla; client = carla.Client(); client.reload_world()'
+uv run scenario_runner/src/scenario_runner/scenario_runner.py --scenario ParsedScenario --additionalScenario src/target/parsed_scenario.py --configFile target-rule-1.yaml.xml
+```
+The first line is to reset the map, since the scenario breaks for some reason. The second line is to run the actual scenario runner (do mind where scenario_runner.py is on your machine.) while providing the scenario file through the `--additionalScenario` flag, and the rest should be self-descriptive.
+
+### flags (Not created yet)
 - --carla-port: Changes the CARLA port. (Default: 2000)
 - --output OUTPUT: Prints the xml file to the output file instead of the standard output.
 
